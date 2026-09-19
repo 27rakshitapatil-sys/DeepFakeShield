@@ -188,6 +188,10 @@ def analyze_video_api(request):
                     "frame_number": index,
                     "frame_position": position,
                     "timestamp": timestamp,
+                    "timestamp_seconds": round(
+                        timestamp_seconds,
+                        2
+                    ),
                     "prediction": frame_prediction,
                     "real_probability": round(
                         real_score * 100,
@@ -254,6 +258,85 @@ def analyze_video_api(request):
             * 100
         )
 
+        # =========================
+        # SUSPICIOUS SEGMENTS
+        # =========================
+
+        suspicious_segments = []
+
+        if suspicious_frames:
+
+            segment_start = suspicious_frames[0]
+            previous_frame = suspicious_frames[0]
+
+            for current_frame in suspicious_frames[1:]:
+
+                frame_gap = (
+                    current_frame["timestamp_seconds"]
+                    - previous_frame["timestamp_seconds"]
+                )
+
+                # Frames are treated as part of the same
+                # suspicious segment when they are close
+                # together in the video.
+                expected_gap = (
+                    video_duration
+                    / max(analyzed_frame_count - 1, 1)
+                )
+
+                if frame_gap <= expected_gap * 1.5:
+                    previous_frame = current_frame
+
+                else:
+                    start_time = (
+                        segment_start["timestamp_seconds"]
+                    )
+
+                    end_time = (
+                        previous_frame["timestamp_seconds"]
+                    )
+
+                    suspicious_segments.append(
+    {
+        "start": segment_start["timestamp"],
+        "start_seconds": round(
+            start_time,
+            2
+        ),
+        "end": previous_frame["timestamp"],
+        "duration": round(
+            end_time - start_time,
+            2
+        )
+    }
+)
+
+                    segment_start = current_frame
+                    previous_frame = current_frame
+
+            # Add the final suspicious segment
+            start_time = (
+                segment_start["timestamp_seconds"]
+            )
+
+            end_time = (
+                previous_frame["timestamp_seconds"]
+            )
+
+            suspicious_segments.append(
+    {
+        "start": segment_start["timestamp"],
+        "start_seconds": round(
+            start_time,
+            2
+        ),
+        "end": previous_frame["timestamp"],
+        "duration": round(
+            end_time - start_time,
+            2
+        )
+    }
+)
         return Response(
             {
                 "filename": uploaded_video.name,
@@ -283,6 +366,8 @@ def analyze_video_api(request):
                     suspicious_percentage,
                     2
                 ),
+
+                "suspicious_segments": suspicious_segments,
 
                 "frame_analysis": frame_analysis,
 

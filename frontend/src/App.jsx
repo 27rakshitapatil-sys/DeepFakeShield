@@ -486,6 +486,99 @@ function App() {
                 </div>
 
               </div>
+              {/* =========================
+    SUSPICIOUS TIMELINE
+========================= */}
+
+{videoResult.suspicious_segments &&
+  videoResult.suspicious_segments.length > 0 && (
+
+    <div className="suspicious-timeline">
+
+      <h3>
+        Suspicious Timeline
+      </h3>
+
+      <div className="timeline-bar">
+
+        {videoResult.suspicious_segments.map(
+          (segment, index) => {
+
+            const startSeconds =
+              segment.start_seconds ?? 0;
+
+            const duration =
+              videoResult.video_duration > 0
+                ? (segment.duration /
+                    videoResult.video_duration) *
+                  100
+                : 0;
+
+            const left =
+              videoResult.video_duration > 0
+                ? (startSeconds /
+                    videoResult.video_duration) *
+                  100
+                : 0;
+
+            return (
+              <div
+                key={index}
+                className="timeline-segment"
+                style={{
+                  left: `${left}%`,
+                  width: `${Math.max(duration, 2)}%`,
+                }}
+                title={`${segment.start} - ${segment.end}`}
+              ></div>
+            );
+          }
+        )}
+
+      </div>
+
+      <div className="timeline-labels">
+        <span>
+          00:00
+        </span>
+
+        <span>
+          {videoResult.video_duration}s
+        </span>
+      </div>
+
+      <div className="suspicious-segment-list">
+
+        {videoResult.suspicious_segments.map(
+          (segment, index) => (
+
+            <div
+              className="suspicious-segment"
+              key={index}
+            >
+
+              <strong>
+                Suspicious Segment {index + 1}
+              </strong>
+
+              <span>
+                {segment.start} → {segment.end}
+              </span>
+
+              <span>
+                Duration: {segment.duration}s
+              </span>
+
+            </div>
+
+          )
+        )}
+
+      </div>
+
+    </div>
+
+  )}
 
               {/* =========================
                   FRAME-BY-FRAME ANALYSIS

@@ -569,3 +569,101 @@ body {
     grid-template-columns: 1fr;
   }
 }
+/* =========================
+   SUSPICIOUS TIMELINE
+========================= */
+
+.suspicious-timeline {
+  margin-top: 30px;
+  padding: 22px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 15px;
+  text-align: left;
+}
+
+.suspicious-timeline h3 {
+  margin-bottom: 20px;
+  color: #312e81;
+  font-size: 19px;
+  text-align: center;
+}
+
+/* Timeline bar */
+
+.timeline-bar {
+  position: relative;
+  width: 100%;
+  height: 16px;
+  background: #e2e8f0;
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.timeline-segment {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  min-width: 6px;
+  background: linear-gradient(
+    90deg,
+    #ef4444,
+    #dc2626
+  );
+  border-radius: 20px;
+}
+
+/* Timeline labels */
+
+.timeline-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+/* Suspicious segment details */
+
+.suspicious-segment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.suspicious-segment {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 13px 15px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  font-size: 13px;
+}
+
+.suspicious-segment strong {
+  color: #991b1b;
+}
+
+.suspicious-segment span {
+  color: #64748b;
+}
+
+/* =========================
+   RESPONSIVE TIMELINE
+========================= */
+
+@media (max-width: 600px) {
+  .suspicious-timeline {
+    padding: 17px;
+  }
+
+  .suspicious-segment {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+  }
+}
