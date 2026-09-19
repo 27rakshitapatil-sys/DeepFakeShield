@@ -134,7 +134,10 @@ function App() {
     <div className="app">
       <header className="header">
         <h1>Deepfake Shield</h1>
-        <p>AI-powered image and video authenticity analysis</p>
+
+        <p>
+          AI-powered image and video authenticity analysis
+        </p>
       </header>
 
       <main className="container">
@@ -158,10 +161,14 @@ function App() {
               onChange={handleFileChange}
             />
 
-            <span className="upload-icon">+</span>
+            <span className="upload-icon">
+              +
+            </span>
 
             <span className="upload-title">
-              {selectedFile ? selectedFile.name : "Choose an image"}
+              {selectedFile
+                ? selectedFile.name
+                : "Choose an image"}
             </span>
 
             <span className="upload-text">
@@ -171,7 +178,9 @@ function App() {
 
           {preview && (
             <div className="preview-section">
-              <h3>Selected Image</h3>
+              <h3>
+                Selected Image
+              </h3>
 
               <img
                 src={preview}
@@ -186,14 +195,23 @@ function App() {
             onClick={handleAnalyze}
             disabled={loading}
           >
-            {loading ? "Analyzing..." : "Analyze Image"}
+            {loading
+              ? "Analyzing..."
+              : "Analyze Image"}
           </button>
 
-          {error && <p className="error-message">{error}</p>}
+          {error && (
+            <p className="error-message">
+              {error}
+            </p>
+          )}
 
           {result && (
             <div className="result-card">
-              <h2>Analysis Result</h2>
+
+              <h2>
+                Analysis Result
+              </h2>
 
               <div
                 className={`prediction ${
@@ -206,38 +224,66 @@ function App() {
               </div>
 
               <div className="probabilities">
+
                 <div>
-                  <span>Real Probability</span>
-                  <strong>{result.real_probability}%</strong>
+                  <span>
+                    Real Probability
+                  </span>
+
+                  <strong>
+                    {result.real_probability}%
+                  </strong>
                 </div>
 
                 <div>
-                  <span>Fake Probability</span>
-                  <strong>{result.fake_probability}%</strong>
+                  <span>
+                    Fake Probability
+                  </span>
+
+                  <strong>
+                    {result.fake_probability}%
+                  </strong>
                 </div>
+
               </div>
 
               <div className="confidence-section">
+
                 <div className="confidence-header">
-                  <span>AI-generated probability</span>
-                  <strong>{result.fake_probability}%</strong>
+
+                  <span>
+                    AI-generated probability
+                  </span>
+
+                  <strong>
+                    {result.fake_probability}%
+                  </strong>
+
                 </div>
 
                 <div className="confidence-bar">
+
                   <div
                     className="confidence-fill"
                     style={{
                       width: `${result.fake_probability}%`,
                     }}
                   ></div>
+
                 </div>
 
                 <p className="probability-level">
+
                   Probability level:{" "}
+
                   <strong>
-                    {getProbabilityLevel(result.fake_probability)}
+                    {getProbabilityLevel(
+                      result.fake_probability
+                    )}
                   </strong>
+
                 </p>
+
               </div>
 
               <p className="disclaimer">
@@ -251,6 +297,7 @@ function App() {
               >
                 Analyze Another Image
               </button>
+
             </div>
           )}
         </div>
@@ -260,7 +307,10 @@ function App() {
         ========================= */}
 
         <div className="upload-card video-card">
-          <h2>Analyze a Video</h2>
+
+          <h2>
+            Analyze a Video
+          </h2>
 
           <p className="description">
             Upload a video and Deepfake Shield will analyze selected frames
@@ -268,23 +318,29 @@ function App() {
           </p>
 
           <label className="upload-box">
+
             <input
               type="file"
               accept="video/*"
               onChange={handleVideoChange}
             />
 
-            <span className="upload-icon">+</span>
+            <span className="upload-icon">
+              +
+            </span>
 
             <span className="upload-title">
+
               {selectedVideo
                 ? selectedVideo.name
                 : "Choose a video"}
+
             </span>
 
             <span className="upload-text">
               MP4, MOV, AVI or other supported video formats
             </span>
+
           </label>
 
           <button
@@ -305,7 +361,10 @@ function App() {
 
           {videoResult && (
             <div className="result-card">
-              <h2>Video Analysis Result</h2>
+
+              <h2>
+                Video Analysis Result
+              </h2>
 
               <div
                 className={`prediction ${
@@ -318,59 +377,157 @@ function App() {
               </div>
 
               <div className="probabilities">
+
                 <div>
-                  <span>Real Probability</span>
+                  <span>
+                    Real Probability
+                  </span>
+
                   <strong>
                     {videoResult.real_probability}%
                   </strong>
                 </div>
 
                 <div>
-                  <span>Fake Probability</span>
+                  <span>
+                    Fake Probability
+                  </span>
+
                   <strong>
                     {videoResult.fake_probability}%
                   </strong>
                 </div>
+
               </div>
 
               <div className="confidence-section">
+
                 <div className="confidence-header">
-                  <span>AI-generated probability</span>
+
+                  <span>
+                    AI-generated probability
+                  </span>
+
                   <strong>
                     {videoResult.fake_probability}%
                   </strong>
+
                 </div>
 
                 <div className="confidence-bar">
+
                   <div
                     className="confidence-fill"
                     style={{
                       width: `${videoResult.fake_probability}%`,
                     }}
                   ></div>
+
                 </div>
 
                 <p className="probability-level">
+
                   Probability level:{" "}
+
                   <strong>
                     {getProbabilityLevel(
                       videoResult.fake_probability
                     )}
                   </strong>
+
                 </p>
+
               </div>
 
+              {/* =========================
+                  FRAMES ANALYZED
+              ========================= */}
+
               <p className="frames-analyzed">
+
                 Frames analyzed:{" "}
+
                 <strong>
                   {videoResult.frames_analyzed}
                 </strong>
+
               </p>
 
+              {/* =========================
+                  FRAME-BY-FRAME ANALYSIS
+              ========================= */}
+
+              {videoResult.frame_analysis &&
+                videoResult.frame_analysis.length > 0 && (
+
+                  <div className="frame-analysis">
+
+                    <h3>
+                      Frame-by-Frame Analysis
+                    </h3>
+
+                    <div className="frame-analysis-list">
+
+                      {videoResult.frame_analysis.map(
+                        (frame) => (
+
+                          <div
+                            className={`frame-item ${
+                              frame.prediction.toLowerCase() === "fake"
+                                ? "frame-fake"
+                                : "frame-real"
+                            }`}
+                            key={frame.frame_number}
+                          >
+
+                            <div className="frame-info">
+
+                              <strong>
+                                Frame {frame.frame_number}
+                              </strong>
+
+                              <span>
+                                {frame.prediction}
+                              </span>
+
+                            </div>
+
+                            <div className="frame-probabilities">
+
+                              <span>
+                                Real:{" "}
+                                {frame.real_probability}%
+                              </span>
+
+                              <span>
+                                Fake:{" "}
+                                {frame.fake_probability}%
+                              </span>
+
+                              <strong>
+                                Confidence:{" "}
+                                {frame.confidence}%
+                              </strong>
+
+                            </div>
+
+                          </div>
+
+                        )
+                      )}
+
+                    </div>
+
+                  </div>
+
+                )}
+
               <p className="disclaimer">
+
                 This result is an AI-based probability estimate from
                 selected video frames and should not be treated as
                 definitive proof of authenticity.
+
               </p>
 
               <button
@@ -379,8 +536,10 @@ function App() {
               >
                 Analyze Another Video
               </button>
+
             </div>
           )}
+
         </div>
 
       </main>

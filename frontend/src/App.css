@@ -441,3 +441,81 @@ body {
 .frames-analyzed strong {
   color: #312e81;
 }
+/* =========================
+   FRAME-BY-FRAME ANALYSIS
+========================= */
+
+.frame-analysis {
+  margin-top: 28px;
+  text-align: left;
+}
+
+.frame-analysis h3 {
+  margin-bottom: 16px;
+  color: #312e81;
+  font-size: 19px;
+  text-align: center;
+}
+
+.frame-analysis-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.frame-item {
+  padding: 16px;
+  border-radius: 12px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+}
+
+.frame-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.frame-info strong {
+  color: #1e293b;
+  font-size: 15px;
+}
+
+.frame-info span {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.frame-real .frame-info span {
+  color: #166534;
+}
+
+.frame-fake .frame-info span {
+  color: #991b1b;
+}
+
+.frame-probabilities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.frame-probabilities strong {
+  color: #312e81;
+}
+
+@media (max-width: 600px) {
+  .frame-info {
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .frame-probabilities {
+    flex-direction: column;
+    gap: 6px;
+  }
+}
