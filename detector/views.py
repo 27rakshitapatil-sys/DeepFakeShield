@@ -69,12 +69,10 @@ def analyze_video_api(request):
     video_path = f"temp_{uploaded_video.name}"
 
     try:
-        # Save uploaded video temporarily
         with open(video_path, "wb+") as destination:
             for chunk in uploaded_video.chunks():
                 destination.write(chunk)
 
-        # Open video
         video = cv2.VideoCapture(video_path)
 
         if not video.isOpened():
@@ -83,9 +81,7 @@ def analyze_video_api(request):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        total_frames = int(
-            video.get(cv2.CAP_PROP_FRAME_COUNT)
-        )
+        total_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
 
         if total_frames <= 0:
             video.release()
@@ -95,7 +91,6 @@ def analyze_video_api(request):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Analyze up to 10 evenly distributed frames
         frame_count = min(10, total_frames)
 
         frame_positions = [
@@ -109,8 +104,9 @@ def analyze_video_api(request):
         fake_scores = []
         real_scores = []
 
-        # Analyze selected frames
-        for position in frame_positions:
+        frame_analysis = []
+
+        for index, position in enumerate(frame_positions, start=1):
             video.set(
                 cv2.CAP_PROP_POS_FRAMES,
                 position
@@ -121,7 +117,6 @@ def analyze_video_api(request):
             if not success:
                 continue
 
-            # OpenCV uses BGR, while PIL uses RGB
             frame_rgb = cv2.cvtColor(
                 frame,
                 cv2.COLOR_BGR2RGB
@@ -129,7 +124,6 @@ def analyze_video_api(request):
 
             image = Image.fromarray(frame_rgb)
 
-            # Use the existing deepfake image model
             results = analyze_image(image)
 
             fake_score = next(
@@ -147,6 +141,37 @@ def analyze_video_api(request):
             fake_scores.append(fake_score)
             real_scores.append(real_score)
 
+            frame_prediction = (
+                "Fake"
+                if fake_score > real_score
+                else "Real"
+            )
+
+            frame_confidence = max(
+                fake_score,
+                real_score
+            )
+
+            frame_analysis.append(
+                {
+                    "frame_number": index,
+                    "frame_position": position,
+                    "prediction": frame_prediction,
+                    "real_probability": round(
+                        real_score * 100,
+                        2
+                    ),
+                    "fake_probability": round(
+                        fake_score * 100,
+                        2
+                    ),
+                    "confidence": round(
+                        frame_confidence * 100,
+                        2
+                    )
+                }
+            )
+
         video.release()
 
         if not fake_scores:
@@ -160,7 +185,6 @@ def analyze_video_api(request):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Calculate average probability across analyzed frames
         average_fake_score = (
             sum(fake_scores) / len(fake_scores)
         )
@@ -169,7 +193,6 @@ def analyze_video_api(request):
             sum(real_scores) / len(real_scores)
         )
 
-        # Final video prediction
         prediction = (
             "Fake"
             if average_fake_score > average_real_score
@@ -189,6 +212,7 @@ def analyze_video_api(request):
                     2
                 ),
                 "frames_analyzed": len(fake_scores),
+                "frame_analysis": frame_analysis,
                 "status": "analyzed"
             },
             status=status.HTTP_200_OK
@@ -201,6 +225,5 @@ def analyze_video_api(request):
         )
 
     finally:
-        # Remove temporary video file
         if os.path.exists(video_path):
             os.remove(video_path)
