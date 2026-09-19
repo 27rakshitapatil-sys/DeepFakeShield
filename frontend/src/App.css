@@ -519,3 +519,53 @@ body {
     gap: 6px;
   }
 }
+/* =========================
+   VIDEO FORENSIC SUMMARY
+========================= */
+
+.video-forensic-summary {
+  margin-top: 24px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.forensic-item {
+  background: white;
+  padding: 17px;
+  border-radius: 13px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+  text-align: center;
+}
+
+.forensic-item span {
+  display: block;
+  color: #64748b;
+  font-size: 13px;
+  margin-bottom: 7px;
+}
+
+.forensic-item strong {
+  color: #312e81;
+  font-size: 19px;
+}
+
+/* =========================
+   FRAME TIMESTAMP
+========================= */
+
+.frame-probabilities span:first-child {
+  color: #312e81;
+  font-weight: 600;
+}
+
+/* =========================
+   RESPONSIVE FORENSIC SUMMARY
+========================= */
+
+@media (max-width: 600px) {
+  .video-forensic-summary {
+    grid-template-columns: 1fr;
+  }
+}

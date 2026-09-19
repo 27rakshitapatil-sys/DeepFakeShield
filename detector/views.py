@@ -81,15 +81,30 @@ def analyze_video_api(request):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        total_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
+        total_frames = int(
+            video.get(cv2.CAP_PROP_FRAME_COUNT)
+        )
+
+        fps = float(
+            video.get(cv2.CAP_PROP_FPS)
+        )
 
         if total_frames <= 0:
             video.release()
 
             return Response(
-                {"error": "The video contains no readable frames."},
+                {
+                    "error": (
+                        "The video contains no readable frames."
+                    )
+                },
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+        if fps <= 0:
+            fps = 30.0
+
+        video_duration = total_frames / fps
 
         frame_count = min(10, total_frames)
 
@@ -106,7 +121,10 @@ def analyze_video_api(request):
 
         frame_analysis = []
 
-        for index, position in enumerate(frame_positions, start=1):
+        for index, position in enumerate(
+            frame_positions,
+            start=1
+        ):
             video.set(
                 cv2.CAP_PROP_POS_FRAMES,
                 position
@@ -152,10 +170,24 @@ def analyze_video_api(request):
                 real_score
             )
 
+            # Calculate timestamp for this frame
+            timestamp_seconds = position / fps
+
+            minutes = int(
+                timestamp_seconds // 60
+            )
+
+            seconds = timestamp_seconds % 60
+
+            timestamp = (
+                f"{minutes:02d}:{seconds:05.2f}"
+            )
+
             frame_analysis.append(
                 {
                     "frame_number": index,
                     "frame_position": position,
+                    "timestamp": timestamp,
                     "prediction": frame_prediction,
                     "real_probability": round(
                         real_score * 100,
@@ -199,20 +231,61 @@ def analyze_video_api(request):
             else "Real"
         )
 
+        # Identify suspicious frames
+        # A frame is considered suspicious when
+        # fake probability is 50% or higher.
+        suspicious_frames = [
+            frame
+            for frame in frame_analysis
+            if frame["fake_probability"] >= 50
+        ]
+
+        suspicious_frame_count = len(
+            suspicious_frames
+        )
+
+        analyzed_frame_count = len(
+            frame_analysis
+        )
+
+        suspicious_percentage = (
+            suspicious_frame_count
+            / analyzed_frame_count
+            * 100
+        )
+
         return Response(
             {
                 "filename": uploaded_video.name,
+
                 "prediction": prediction,
+
                 "fake_probability": round(
                     average_fake_score * 100,
                     2
                 ),
+
                 "real_probability": round(
                     average_real_score * 100,
                     2
                 ),
-                "frames_analyzed": len(fake_scores),
+
+                "frames_analyzed": analyzed_frame_count,
+
+                "video_duration": round(
+                    video_duration,
+                    2
+                ),
+
+                "suspicious_frames": suspicious_frame_count,
+
+                "suspicious_percentage": round(
+                    suspicious_percentage,
+                    2
+                ),
+
                 "frame_analysis": frame_analysis,
+
                 "status": "analyzed"
             },
             status=status.HTTP_200_OK

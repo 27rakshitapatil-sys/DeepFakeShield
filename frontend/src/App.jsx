@@ -440,18 +440,52 @@ function App() {
               </div>
 
               {/* =========================
-                  FRAMES ANALYZED
+                  VIDEO FORENSIC SUMMARY
               ========================= */}
 
-              <p className="frames-analyzed">
+              <div className="video-forensic-summary">
 
-                Frames analyzed:{" "}
+                <div className="forensic-item">
+                  <span>
+                    Video Duration
+                  </span>
 
-                <strong>
-                  {videoResult.frames_analyzed}
-                </strong>
+                  <strong>
+                    {videoResult.video_duration}s
+                  </strong>
+                </div>
 
-              </p>
+                <div className="forensic-item">
+                  <span>
+                    Frames Analyzed
+                  </span>
+
+                  <strong>
+                    {videoResult.frames_analyzed}
+                  </strong>
+                </div>
+
+                <div className="forensic-item">
+                  <span>
+                    Suspicious Frames
+                  </span>
+
+                  <strong>
+                    {videoResult.suspicious_frames}
+                  </strong>
+                </div>
+
+                <div className="forensic-item">
+                  <span>
+                    Suspicious Portion
+                  </span>
+
+                  <strong>
+                    {videoResult.suspicious_percentage}%
+                  </strong>
+                </div>
+
+              </div>
 
               {/* =========================
                   FRAME-BY-FRAME ANALYSIS
@@ -493,6 +527,11 @@ function App() {
                             </div>
 
                             <div className="frame-probabilities">
+
+                              <span>
+                                Timestamp:{" "}
+                                {frame.timestamp}
+                              </span>
 
                               <span>
                                 Real:{" "}
