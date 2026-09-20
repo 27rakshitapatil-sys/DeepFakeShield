@@ -7,6 +7,10 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from .ai_models.deepfake_model import analyze_image
+from .face_tracking import (
+    detect_face,
+    calculate_temporal_consistency
+)
 
 
 @api_view(["POST"])
@@ -36,14 +40,24 @@ def analyze_image_api(request):
             if item["label"].lower() == "real"
         )
 
-        prediction = "Fake" if fake_score > real_score else "Real"
+        prediction = (
+            "Fake"
+            if fake_score > real_score
+            else "Real"
+        )
 
         return Response(
             {
                 "filename": uploaded_image.name,
                 "prediction": prediction,
-                "fake_probability": round(fake_score * 100, 2),
-                "real_probability": round(real_score * 100, 2),
+                "fake_probability": round(
+                    fake_score * 100,
+                    2
+                ),
+                "real_probability": round(
+                    real_score * 100,
+                    2
+                ),
                 "status": "analyzed"
             },
             status=status.HTTP_200_OK
@@ -119,6 +133,9 @@ def analyze_video_api(request):
         fake_scores = []
         real_scores = []
 
+        # Store face positions for temporal consistency analysis.
+        face_positions = []
+
         frame_analysis = []
 
         for index, position in enumerate(
@@ -135,12 +152,21 @@ def analyze_video_api(request):
             if not success:
                 continue
 
+            # Detect face for temporal consistency analysis.
+            face_position = detect_face(frame)
+
+            face_positions.append(
+                face_position
+            )
+
             frame_rgb = cv2.cvtColor(
                 frame,
                 cv2.COLOR_BGR2RGB
             )
 
-            image = Image.fromarray(frame_rgb)
+            image = Image.fromarray(
+                frame_rgb
+            )
 
             results = analyze_image(image)
 
@@ -156,8 +182,13 @@ def analyze_video_api(request):
                 if item["label"].lower() == "real"
             )
 
-            fake_scores.append(fake_score)
-            real_scores.append(real_score)
+            fake_scores.append(
+                fake_score
+            )
+
+            real_scores.append(
+                real_score
+            )
 
             frame_prediction = (
                 "Fake"
@@ -170,7 +201,7 @@ def analyze_video_api(request):
                 real_score
             )
 
-            # Calculate timestamp for this frame
+            # Calculate timestamp for this frame.
             timestamp_seconds = position / fps
 
             minutes = int(
@@ -210,6 +241,14 @@ def analyze_video_api(request):
 
         video.release()
 
+        # Calculate temporal consistency across
+        # analyzed frames.
+        temporal_consistency = (
+            calculate_temporal_consistency(
+                face_positions
+            )
+        )
+
         if not fake_scores:
             return Response(
                 {
@@ -222,11 +261,13 @@ def analyze_video_api(request):
             )
 
         average_fake_score = (
-            sum(fake_scores) / len(fake_scores)
+            sum(fake_scores)
+            / len(fake_scores)
         )
 
         average_real_score = (
-            sum(real_scores) / len(real_scores)
+            sum(real_scores)
+            / len(real_scores)
         )
 
         prediction = (
@@ -235,9 +276,10 @@ def analyze_video_api(request):
             else "Real"
         )
 
-        # Identify suspicious frames
-        # A frame is considered suspicious when
-        # fake probability is 50% or higher.
+        # =========================
+        # SUSPICIOUS FRAMES
+        # =========================
+
         suspicious_frames = [
             frame
             for frame in frame_analysis
@@ -259,6 +301,60 @@ def analyze_video_api(request):
         )
 
         # =========================
+        # COMBINED FORENSIC ANALYSIS
+        # =========================
+
+        # AI fake probability is the primary signal.
+        ai_fake_score = average_fake_score
+
+        # Lower temporal consistency means more unusual
+        # face movement across analyzed frames.
+        temporal_risk = (
+            1 - temporal_consistency
+        )
+
+        # Suspicious-frame ratio is another
+        # supporting signal.
+        suspicious_frame_ratio = (
+            suspicious_frame_count
+            / analyzed_frame_count
+        )
+
+        # Combine the three signals.
+        #
+        # AI model: 60%
+        # Temporal signal: 20%
+        # Suspicious-frame signal: 20%
+        forensic_score = (
+            (ai_fake_score * 0.60)
+            + (temporal_risk * 0.20)
+            + (suspicious_frame_ratio * 0.20)
+        )
+
+        forensic_score = round(
+            max(
+                0.0,
+                min(1.0, forensic_score)
+            ),
+            4
+        )
+
+        if forensic_score < 0.30:
+            forensic_assessment = (
+                "Low Concern"
+            )
+
+        elif forensic_score < 0.60:
+            forensic_assessment = (
+                "Moderate Concern"
+            )
+
+        else:
+            forensic_assessment = (
+                "High Concern"
+            )
+
+        # =========================
         # SUSPICIOUS SEGMENTS
         # =========================
 
@@ -272,16 +368,23 @@ def analyze_video_api(request):
             for current_frame in suspicious_frames[1:]:
 
                 frame_gap = (
-                    current_frame["timestamp_seconds"]
-                    - previous_frame["timestamp_seconds"]
+                    current_frame[
+                        "timestamp_seconds"
+                    ]
+                    - previous_frame[
+                        "timestamp_seconds"
+                    ]
                 )
 
-                # Frames are treated as part of the same
-                # suspicious segment when they are close
-                # together in the video.
+                # Frames are treated as part of
+                # the same suspicious segment when
+                # they are close together.
                 expected_gap = (
                     video_duration
-                    / max(analyzed_frame_count - 1, 1)
+                    / max(
+                        analyzed_frame_count - 1,
+                        1
+                    )
                 )
 
                 if frame_gap <= expected_gap * 1.5:
@@ -289,54 +392,81 @@ def analyze_video_api(request):
 
                 else:
                     start_time = (
-                        segment_start["timestamp_seconds"]
+                        segment_start[
+                            "timestamp_seconds"
+                        ]
                     )
 
                     end_time = (
-                        previous_frame["timestamp_seconds"]
+                        previous_frame[
+                            "timestamp_seconds"
+                        ]
                     )
 
                     suspicious_segments.append(
-    {
-        "start": segment_start["timestamp"],
-        "start_seconds": round(
-            start_time,
-            2
-        ),
-        "end": previous_frame["timestamp"],
-        "duration": round(
-            end_time - start_time,
-            2
-        )
-    }
-)
+                        {
+                            "start": (
+                                segment_start[
+                                    "timestamp"
+                                ]
+                            ),
+                            "start_seconds": round(
+                                start_time,
+                                2
+                            ),
+                            "end": (
+                                previous_frame[
+                                    "timestamp"
+                                ]
+                            ),
+                            "duration": round(
+                                end_time
+                                - start_time,
+                                2
+                            )
+                        }
+                    )
 
                     segment_start = current_frame
                     previous_frame = current_frame
 
-            # Add the final suspicious segment
+            # Add the final suspicious segment.
             start_time = (
-                segment_start["timestamp_seconds"]
+                segment_start[
+                    "timestamp_seconds"
+                ]
             )
 
             end_time = (
-                previous_frame["timestamp_seconds"]
+                previous_frame[
+                    "timestamp_seconds"
+                ]
             )
 
             suspicious_segments.append(
-    {
-        "start": segment_start["timestamp"],
-        "start_seconds": round(
-            start_time,
-            2
-        ),
-        "end": previous_frame["timestamp"],
-        "duration": round(
-            end_time - start_time,
-            2
-        )
-    }
-)
+                {
+                    "start": (
+                        segment_start[
+                            "timestamp"
+                        ]
+                    ),
+                    "start_seconds": round(
+                        start_time,
+                        2
+                    ),
+                    "end": (
+                        previous_frame[
+                            "timestamp"
+                        ]
+                    ),
+                    "duration": round(
+                        end_time
+                        - start_time,
+                        2
+                    )
+                }
+            )
+
         return Response(
             {
                 "filename": uploaded_video.name,
@@ -353,23 +483,44 @@ def analyze_video_api(request):
                     2
                 ),
 
-                "frames_analyzed": analyzed_frame_count,
+                "frames_analyzed": (
+                    analyzed_frame_count
+                ),
+
+                "temporal_consistency": (
+                    temporal_consistency
+                ),
+
+                "forensic_score": round(
+                    forensic_score * 100,
+                    2
+                ),
+
+                "forensic_assessment": (
+                    forensic_assessment
+                ),
 
                 "video_duration": round(
                     video_duration,
                     2
                 ),
 
-                "suspicious_frames": suspicious_frame_count,
+                "suspicious_frames": (
+                    suspicious_frame_count
+                ),
 
                 "suspicious_percentage": round(
                     suspicious_percentage,
                     2
                 ),
 
-                "suspicious_segments": suspicious_segments,
+                "suspicious_segments": (
+                    suspicious_segments
+                ),
 
-                "frame_analysis": frame_analysis,
+                "frame_analysis": (
+                    frame_analysis
+                ),
 
                 "status": "analyzed"
             },

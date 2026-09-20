@@ -407,6 +407,11 @@ body {
     font-size: 20px;
   }
 }
+
+/* =========================
+   RESET BUTTON
+========================= */
+
 .reset-button {
   margin-top: 18px;
   padding: 12px 24px;
@@ -424,6 +429,7 @@ body {
   background: #f5f3ff;
   border-color: #7c3aed;
 }
+
 /* =========================
    VIDEO ANALYSIS
 ========================= */
@@ -441,6 +447,7 @@ body {
 .frames-analyzed strong {
   color: #312e81;
 }
+
 /* =========================
    FRAME-BY-FRAME ANALYSIS
 ========================= */
@@ -519,6 +526,7 @@ body {
     gap: 6px;
   }
 }
+
 /* =========================
    VIDEO FORENSIC SUMMARY
 ========================= */
@@ -569,6 +577,7 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
 /* =========================
    SUSPICIOUS TIMELINE
 ========================= */
@@ -665,5 +674,95 @@ body {
     flex-direction: column;
     align-items: flex-start;
     gap: 5px;
+  }
+}
+
+/* =========================
+   FORENSIC VISUALIZATION
+========================= */
+
+.forensic-visualization {
+  margin-top: 30px;
+  padding: 24px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 15px;
+  text-align: left;
+}
+
+.forensic-visualization h3 {
+  margin-bottom: 24px;
+  color: #312e81;
+  font-size: 19px;
+  text-align: center;
+}
+
+.forensic-metric {
+  margin-bottom: 20px;
+}
+
+.forensic-metric:last-child {
+  margin-bottom: 0;
+}
+
+.forensic-metric-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 9px;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.forensic-metric-header strong {
+  color: #312e81;
+  font-size: 15px;
+}
+
+.forensic-metric-bar {
+  width: 100%;
+  height: 12px;
+  background: #e2e8f0;
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.forensic-metric-fill {
+  height: 100%;
+  border-radius: 20px;
+  transition: width 0.7s ease;
+}
+
+.fake-probability-fill {
+  background: linear-gradient(90deg, #f59e0b, #ef4444);
+}
+
+.temporal-fill {
+  background: linear-gradient(90deg, #6366f1, #7c3aed);
+}
+
+.suspicious-fill {
+  background: linear-gradient(90deg, #fb7185, #dc2626);
+}
+
+.forensic-score-fill {
+  background: linear-gradient(90deg, #f59e0b, #ef4444);
+}
+
+/* =========================
+   RESPONSIVE FORENSIC VISUALIZATION
+========================= */
+
+@media (max-width: 600px) {
+  .forensic-visualization {
+    padding: 18px;
+  }
+
+  .forensic-metric-header {
+    font-size: 13px;
+  }
+
+  .forensic-metric-header strong {
+    font-size: 14px;
   }
 }

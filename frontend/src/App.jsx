@@ -485,100 +485,265 @@ function App() {
                   </strong>
                 </div>
 
+                {/* TEMPORAL CONSISTENCY */}
+
+                <div className="forensic-item">
+                  <span>
+                    Temporal Consistency
+                  </span>
+
+                  <strong>
+                    {videoResult.temporal_consistency !== undefined
+                      ? `${(videoResult.temporal_consistency * 100).toFixed(2)}%`
+                      : "N/A"}
+                  </strong>
+                </div>
+
+                {/* FORENSIC SCORE */}
+
+                <div className="forensic-item">
+                  <span>
+                    Forensic Score
+                  </span>
+
+                  <strong>
+                    {videoResult.forensic_score !== undefined
+                      ? `${videoResult.forensic_score}%`
+                      : "N/A"}
+                  </strong>
+                </div>
+
+                {/* FORENSIC ASSESSMENT */}
+
+                <div className="forensic-item">
+                  <span>
+                    Assessment
+                  </span>
+
+                  <strong>
+                    {videoResult.forensic_assessment || "N/A"}
+                  </strong>
+                </div>
+
               </div>
+
               {/* =========================
-    SUSPICIOUS TIMELINE
-========================= */}
+                  FORENSIC VISUALIZATION
+              ========================= */}
 
-{videoResult.suspicious_segments &&
-  videoResult.suspicious_segments.length > 0 && (
+              <div className="forensic-visualization">
 
-    <div className="suspicious-timeline">
+                <h3>Forensic Visualization</h3>
 
-      <h3>
-        Suspicious Timeline
-      </h3>
+                <div className="forensic-metric">
 
-      <div className="timeline-bar">
+                  <div className="forensic-metric-header">
+                    <span>
+                      AI Fake Probability
+                    </span>
 
-        {videoResult.suspicious_segments.map(
-          (segment, index) => {
+                    <strong>
+                      {videoResult.fake_probability}%
+                    </strong>
+                  </div>
 
-            const startSeconds =
-              segment.start_seconds ?? 0;
+                  <div className="forensic-metric-bar">
 
-            const duration =
-              videoResult.video_duration > 0
-                ? (segment.duration /
-                    videoResult.video_duration) *
-                  100
-                : 0;
+                    <div
+                      className="forensic-metric-fill fake-probability-fill"
+                      style={{
+                        width: `${videoResult.fake_probability}%`,
+                      }}
+                    ></div>
 
-            const left =
-              videoResult.video_duration > 0
-                ? (startSeconds /
-                    videoResult.video_duration) *
-                  100
-                : 0;
+                  </div>
 
-            return (
-              <div
-                key={index}
-                className="timeline-segment"
-                style={{
-                  left: `${left}%`,
-                  width: `${Math.max(duration, 2)}%`,
-                }}
-                title={`${segment.start} - ${segment.end}`}
-              ></div>
-            );
-          }
-        )}
+                </div>
 
-      </div>
+                <div className="forensic-metric">
 
-      <div className="timeline-labels">
-        <span>
-          00:00
-        </span>
+                  <div className="forensic-metric-header">
+                    <span>
+                      Temporal Consistency
+                    </span>
 
-        <span>
-          {videoResult.video_duration}s
-        </span>
-      </div>
+                    <strong>
+                      {videoResult.temporal_consistency !== undefined
+                        ? `${(videoResult.temporal_consistency * 100).toFixed(2)}%`
+                        : "N/A"}
+                    </strong>
+                  </div>
 
-      <div className="suspicious-segment-list">
+                  <div className="forensic-metric-bar">
 
-        {videoResult.suspicious_segments.map(
-          (segment, index) => (
+                    <div
+                      className="forensic-metric-fill temporal-fill"
+                      style={{
+                        width: `${
+                          videoResult.temporal_consistency !== undefined
+                            ? videoResult.temporal_consistency * 100
+                            : 0
+                        }%`,
+                      }}
+                    ></div>
 
-            <div
-              className="suspicious-segment"
-              key={index}
-            >
+                  </div>
 
-              <strong>
-                Suspicious Segment {index + 1}
-              </strong>
+                </div>
 
-              <span>
-                {segment.start} → {segment.end}
-              </span>
+                <div className="forensic-metric">
 
-              <span>
-                Duration: {segment.duration}s
-              </span>
+                  <div className="forensic-metric-header">
+                    <span>
+                      Suspicious Portion
+                    </span>
 
-            </div>
+                    <strong>
+                      {videoResult.suspicious_percentage}%
+                    </strong>
+                  </div>
 
-          )
-        )}
+                  <div className="forensic-metric-bar">
 
-      </div>
+                    <div
+                      className="forensic-metric-fill suspicious-fill"
+                      style={{
+                        width: `${videoResult.suspicious_percentage}%`,
+                      }}
+                    ></div>
 
-    </div>
+                  </div>
 
-  )}
+                </div>
+
+                <div className="forensic-metric">
+
+                  <div className="forensic-metric-header">
+                    <span>
+                      Forensic Score
+                    </span>
+
+                    <strong>
+                      {videoResult.forensic_score !== undefined
+                        ? `${videoResult.forensic_score}%`
+                        : "N/A"}
+                    </strong>
+                  </div>
+
+                  <div className="forensic-metric-bar">
+
+                    <div
+                      className="forensic-metric-fill forensic-score-fill"
+                      style={{
+                        width: `${
+                          videoResult.forensic_score !== undefined
+                            ? videoResult.forensic_score
+                            : 0
+                        }%`,
+                      }}
+                    ></div>
+
+                  </div>
+
+                </div>
+
+              </div>
+
+              {/* =========================
+                  SUSPICIOUS TIMELINE
+              ========================= */}
+
+              {videoResult.suspicious_segments &&
+                videoResult.suspicious_segments.length > 0 && (
+
+                  <div className="suspicious-timeline">
+
+                    <h3>
+                      Suspicious Timeline
+                    </h3>
+
+                    <div className="timeline-bar">
+
+                      {videoResult.suspicious_segments.map(
+                        (segment, index) => {
+
+                          const startSeconds =
+                            segment.start_seconds ?? 0;
+
+                          const duration =
+                            videoResult.video_duration > 0
+                              ? (segment.duration /
+                                  videoResult.video_duration) *
+                                100
+                              : 0;
+
+                          const left =
+                            videoResult.video_duration > 0
+                              ? (startSeconds /
+                                  videoResult.video_duration) *
+                                100
+                              : 0;
+
+                          return (
+                            <div
+                              key={index}
+                              className="timeline-segment"
+                              style={{
+                                left: `${left}%`,
+                                width: `${Math.max(duration, 2)}%`,
+                              }}
+                              title={`${segment.start} - ${segment.end}`}
+                            ></div>
+                          );
+                        }
+                      )}
+
+                    </div>
+
+                    <div className="timeline-labels">
+
+                      <span>
+                        00:00
+                      </span>
+
+                      <span>
+                        {videoResult.video_duration}s
+                      </span>
+
+                    </div>
+
+                    <div className="suspicious-segment-list">
+
+                      {videoResult.suspicious_segments.map(
+                        (segment, index) => (
+
+                          <div
+                            className="suspicious-segment"
+                            key={index}
+                          >
+
+                            <strong>
+                              Suspicious Segment {index + 1}
+                            </strong>
+
+                            <span>
+                              {segment.start} → {segment.end}
+                            </span>
+
+                            <span>
+                              Duration: {segment.duration}s
+                            </span>
+
+                          </div>
+
+                        )
+                      )}
+
+                    </div>
+
+                  </div>
+
+                )}
 
               {/* =========================
                   FRAME-BY-FRAME ANALYSIS
