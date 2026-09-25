@@ -14,6 +14,23 @@ function App() {
   const [videoLoading, setVideoLoading] = useState(false);
   const [videoError, setVideoError] = useState("");
 
+  // =========================
+  // ANALYSIS HISTORY
+  // =========================
+
+  const [analysisHistory, setAnalysisHistory] = useState(() => {
+    try {
+      const savedHistory = localStorage.getItem("deepfakeShieldHistory");
+      return savedHistory ? JSON.parse(savedHistory) : [];
+    } catch (error) {
+      return [];
+    }
+  });
+
+  // =========================
+  // IMAGE FILE CHANGE
+  // =========================
+
   const handleFileChange = (event) => {
     const file = event.target.files[0];
 
@@ -26,6 +43,10 @@ function App() {
     const imageUrl = URL.createObjectURL(file);
     setPreview(imageUrl);
   };
+
+  // =========================
+  // IMAGE ANALYSIS
+  // =========================
 
   const handleAnalyze = async () => {
     if (!selectedFile) {
@@ -52,6 +73,13 @@ function App() {
       );
 
       setResult(response.data);
+
+      // Save completed image analysis to history
+      saveAnalysisToHistory(
+        "Image",
+        selectedFile.name,
+        response.data
+      );
     } catch (err) {
       setError(
         "Unable to analyze the image. Make sure Django is running."
@@ -60,6 +88,10 @@ function App() {
       setLoading(false);
     }
   };
+
+  // =========================
+  // VIDEO FILE CHANGE
+  // =========================
 
   const handleVideoChange = (event) => {
     const file = event.target.files[0];
@@ -70,6 +102,10 @@ function App() {
     setVideoResult(null);
     setVideoError("");
   };
+
+  // =========================
+  // VIDEO ANALYSIS
+  // =========================
 
   const handleAnalyzeVideo = async () => {
     if (!selectedVideo) {
@@ -96,6 +132,13 @@ function App() {
       );
 
       setVideoResult(response.data);
+
+      // Save completed video analysis to history
+      saveAnalysisToHistory(
+        "Video",
+        selectedVideo.name,
+        response.data
+      );
     } catch (err) {
       setVideoError(
         "Unable to analyze the video. Make sure Django is running."
@@ -105,6 +148,10 @@ function App() {
     }
   };
 
+  // =========================
+  // RESET IMAGE ANALYSIS
+  // =========================
+
   const resetImageAnalysis = () => {
     setSelectedFile(null);
     setPreview(null);
@@ -112,11 +159,19 @@ function App() {
     setError("");
   };
 
+  // =========================
+  // RESET VIDEO ANALYSIS
+  // =========================
+
   const resetVideoAnalysis = () => {
     setSelectedVideo(null);
     setVideoResult(null);
     setVideoError("");
   };
+
+  // =========================
+  // PROBABILITY LEVEL
+  // =========================
 
   const getProbabilityLevel = (fakeProbability) => {
     if (fakeProbability < 20) {
@@ -130,8 +185,53 @@ function App() {
     return "High";
   };
 
+  // =========================
+  // SAVE ANALYSIS TO HISTORY
+  // =========================
+
+  const saveAnalysisToHistory = (type, fileName, analysisResult) => {
+    const historyItem = {
+      id: Date.now(),
+      type,
+      fileName,
+      prediction: analysisResult.prediction,
+      real_probability: analysisResult.real_probability,
+      fake_probability: analysisResult.fake_probability,
+      forensic_score:
+        type === "Video"
+          ? analysisResult.forensic_score ?? null
+          : null,
+      timestamp: new Date().toLocaleString(),
+    };
+
+    setAnalysisHistory((previousHistory) => {
+      const updatedHistory = [historyItem, ...previousHistory];
+
+      localStorage.setItem(
+        "deepfakeShieldHistory",
+        JSON.stringify(updatedHistory)
+      );
+
+      return updatedHistory;
+    });
+  };
+
+  // =========================
+  // CLEAR HISTORY
+  // =========================
+
+  const clearHistory = () => {
+    localStorage.removeItem("deepfakeShieldHistory");
+    setAnalysisHistory([]);
+  };
+
   return (
     <div className="app">
+
+      {/* =========================
+          HEADER
+      ========================= */}
+
       <header className="header">
         <h1>Deepfake Shield</h1>
 
@@ -147,6 +247,7 @@ function App() {
         ========================= */}
 
         <div className="upload-card">
+
           <h2>Analyze an Image</h2>
 
           <p className="description">
@@ -155,6 +256,7 @@ function App() {
           </p>
 
           <label className="upload-box">
+
             <input
               type="file"
               accept="image/*"
@@ -174,10 +276,12 @@ function App() {
             <span className="upload-text">
               JPG, JPEG or PNG
             </span>
+
           </label>
 
           {preview && (
             <div className="preview-section">
+
               <h3>
                 Selected Image
               </h3>
@@ -187,6 +291,7 @@ function App() {
                 alt="Preview"
                 className="preview-image"
               />
+
             </div>
           )}
 
@@ -300,6 +405,7 @@ function App() {
 
             </div>
           )}
+
         </div>
 
         {/* =========================
@@ -538,6 +644,7 @@ function App() {
                 <div className="forensic-metric">
 
                   <div className="forensic-metric-header">
+
                     <span>
                       AI Fake Probability
                     </span>
@@ -545,6 +652,7 @@ function App() {
                     <strong>
                       {videoResult.fake_probability}%
                     </strong>
+
                   </div>
 
                   <div className="forensic-metric-bar">
@@ -563,6 +671,7 @@ function App() {
                 <div className="forensic-metric">
 
                   <div className="forensic-metric-header">
+
                     <span>
                       Temporal Consistency
                     </span>
@@ -572,6 +681,7 @@ function App() {
                         ? `${(videoResult.temporal_consistency * 100).toFixed(2)}%`
                         : "N/A"}
                     </strong>
+
                   </div>
 
                   <div className="forensic-metric-bar">
@@ -594,6 +704,7 @@ function App() {
                 <div className="forensic-metric">
 
                   <div className="forensic-metric-header">
+
                     <span>
                       Suspicious Portion
                     </span>
@@ -601,6 +712,7 @@ function App() {
                     <strong>
                       {videoResult.suspicious_percentage}%
                     </strong>
+
                   </div>
 
                   <div className="forensic-metric-bar">
@@ -619,6 +731,7 @@ function App() {
                 <div className="forensic-metric">
 
                   <div className="forensic-metric-header">
+
                     <span>
                       Forensic Score
                     </span>
@@ -628,6 +741,7 @@ function App() {
                         ? `${videoResult.forensic_score}%`
                         : "N/A"}
                     </strong>
+
                   </div>
 
                   <div className="forensic-metric-bar">
@@ -839,7 +953,136 @@ function App() {
 
         </div>
 
+        {/* =========================
+            ANALYSIS HISTORY
+        ========================= */}
+
+        {analysisHistory.length > 0 && (
+
+          <section className="history-section">
+
+            <div className="section-heading">
+
+              <div>
+
+                <span>ANALYSIS HISTORY</span>
+
+                <h2>
+                  Previous Analyses
+                </h2>
+
+              </div>
+
+              <button
+                className="clear-history-btn"
+                onClick={clearHistory}
+              >
+                Clear History
+              </button>
+
+            </div>
+
+            <div className="history-list">
+
+              {analysisHistory.map((item) => (
+
+                <div
+                  className="history-card"
+                  key={item.id}
+                >
+
+                  <div className="history-icon">
+                    {item.type === "Image"
+                      ? "🖼️"
+                      : "🎥"}
+                  </div>
+
+                  <div className="history-info">
+
+                    <strong>
+                      {item.fileName}
+                    </strong>
+
+                    <span>
+                      {item.type === "Image"
+                        ? "Image Analysis"
+                        : "Video Analysis"}
+                    </span>
+
+                    <small>
+                      {item.timestamp}
+                    </small>
+
+                  </div>
+
+                  <div className="history-details">
+
+                    <div className="history-detail">
+
+                      <span>
+                        Result
+                      </span>
+
+                      <strong
+                        className={
+                          item.prediction?.toLowerCase() === "fake"
+                            ? "history-fake"
+                            : "history-real"
+                        }
+                      >
+                        {item.prediction || "Analyzed"}
+                      </strong>
+
+                    </div>
+
+                    <div className="history-detail">
+
+                      <span>
+                        AI Probability
+                      </span>
+
+                      <strong>
+                        {item.fake_probability !== undefined &&
+                        item.fake_probability !== null
+                          ? `${item.fake_probability}%`
+                          : "N/A"}
+                      </strong>
+
+                    </div>
+
+                    {item.type === "Video" && (
+
+                      <div className="history-detail">
+
+                        <span>
+                          Forensic Score
+                        </span>
+
+                        <strong>
+                          {item.forensic_score !== undefined &&
+                          item.forensic_score !== null
+                            ? `${item.forensic_score}%`
+                            : "N/A"}
+                        </strong>
+
+                      </div>
+
+                    )}
+
+                  </div>
+
+                </div>
+
+              ))}
+
+            </div>
+
+          </section>
+
+        )}
+
       </main>
+
     </div>
   );
 }
