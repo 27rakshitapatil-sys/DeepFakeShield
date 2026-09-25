@@ -48,6 +48,55 @@ function App() {
     return matchesSearch && matchesType && matchesPrediction;
   });
 
+  // =========================
+  // ANALYTICS DASHBOARD
+  // =========================
+
+  const analytics = {
+    total: analysisHistory.length,
+    images: analysisHistory.filter((item) => item.type === "Image").length,
+    videos: analysisHistory.filter((item) => item.type === "Video").length,
+    real: analysisHistory.filter(
+      (item) => item.prediction?.toLowerCase() === "real"
+    ).length,
+    fake: analysisHistory.filter(
+      (item) => item.prediction?.toLowerCase() === "fake"
+    ).length,
+    averageFakeProbability:
+      analysisHistory.length > 0
+        ? analysisHistory.reduce(
+            (sum, item) => sum + Number(item.fake_probability ?? 0),
+            0
+          ) / analysisHistory.length
+        : 0,
+    videoScores: analysisHistory
+      .filter(
+        (item) =>
+          item.type === "Video" &&
+          item.forensic_score !== null &&
+          item.forensic_score !== undefined
+      )
+      .map((item) => Number(item.forensic_score)),
+  };
+
+  const averageForensicScore =
+    analytics.videoScores.length > 0
+      ? analytics.videoScores.reduce((sum, score) => sum + score, 0) /
+        analytics.videoScores.length
+      : 0;
+
+  const realPercentage =
+    analytics.total > 0 ? (analytics.real / analytics.total) * 100 : 0;
+
+  const fakePercentage =
+    analytics.total > 0 ? (analytics.fake / analytics.total) * 100 : 0;
+
+  const imagePercentage =
+    analytics.total > 0 ? (analytics.images / analytics.total) * 100 : 0;
+
+  const videoPercentage =
+    analytics.total > 0 ? (analytics.videos / analytics.total) * 100 : 0;
+
   const handleFileChange = (event) => {
     const file = event.target.files[0];
 
@@ -1205,6 +1254,358 @@ function App() {
 
         </div>
 
+
+        {/* =========================
+            ANALYTICS DASHBOARD
+        ========================= */}
+
+        {analysisHistory.length > 0 && (
+          <section className="history-section" style={{ marginBottom: "30px" }}>
+            <div className="section-heading">
+              <div>
+                <span>ANALYTICS DASHBOARD</span>
+                <h2>Analysis Overview</h2>
+              </div>
+            </div>
+
+            {/* Overview Cards */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))",
+                gap: "14px",
+                marginBottom: "20px",
+              }}
+            >
+              {[
+                ["Total Analyses", analytics.total, "📊"],
+                ["Images", analytics.images, "🖼️"],
+                ["Videos", analytics.videos, "🎥"],
+                ["Real Results", analytics.real, "✅"],
+                ["Fake Results", analytics.fake, "⚠️"],
+              ].map(([label, value, icon]) => (
+                <div
+                  key={label}
+                  style={{
+                    background: "#ffffff",
+                    border: "1px solid #e2e8f0",
+                    borderRadius: "12px",
+                    padding: "18px",
+                    boxShadow: "0 4px 14px rgba(15, 23, 42, 0.05)",
+                  }}
+                >
+                  <div style={{ fontSize: "24px", marginBottom: "8px" }}>
+                    {icon}
+                  </div>
+                  <span
+                    style={{
+                      display: "block",
+                      color: "#64748b",
+                      fontSize: "13px",
+                      marginBottom: "5px",
+                    }}
+                  >
+                    {label}
+                  </span>
+                  <strong
+                    style={{
+                      display: "block",
+                      color: "#0f172a",
+                      fontSize: "25px",
+                    }}
+                  >
+                    {value}
+                  </strong>
+                </div>
+              ))}
+            </div>
+
+            {/* Probability and Forensic Metrics */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+                gap: "14px",
+                marginBottom: "20px",
+              }}
+            >
+              <div
+                style={{
+                  background: "#ffffff",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: "12px",
+                  padding: "20px",
+                }}
+              >
+                <span style={{ color: "#64748b", fontSize: "13px" }}>
+                  Average Fake Probability
+                </span>
+                <strong
+                  style={{
+                    display: "block",
+                    marginTop: "7px",
+                    fontSize: "28px",
+                    color: "#312e81",
+                  }}
+                >
+                  {analytics.averageFakeProbability.toFixed(2)}%
+                </strong>
+                <div
+                  style={{
+                    height: "9px",
+                    background: "#e2e8f0",
+                    borderRadius: "999px",
+                    overflow: "hidden",
+                    marginTop: "12px",
+                  }}
+                >
+                  <div
+                    style={{
+                      height: "100%",
+                      width: `${Math.min(
+                        Math.max(analytics.averageFakeProbability, 0),
+                        100
+                      )}%`,
+                      background: "#312e81",
+                      borderRadius: "999px",
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div
+                style={{
+                  background: "#ffffff",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: "12px",
+                  padding: "20px",
+                }}
+              >
+                <span style={{ color: "#64748b", fontSize: "13px" }}>
+                  Average Video Forensic Score
+                </span>
+                <strong
+                  style={{
+                    display: "block",
+                    marginTop: "7px",
+                    fontSize: "28px",
+                    color: "#312e81",
+                  }}
+                >
+                  {analytics.videoScores.length > 0
+                    ? `${averageForensicScore.toFixed(2)}%`
+                    : "N/A"}
+                </strong>
+                <p
+                  style={{
+                    marginTop: "8px",
+                    color: "#64748b",
+                    fontSize: "13px",
+                  }}
+                >
+                  Based on {analytics.videoScores.length} analyzed video
+                  {analytics.videoScores.length === 1 ? "" : "s"}
+                </p>
+              </div>
+            </div>
+
+            {/* Distribution Charts */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+                gap: "14px",
+              }}
+            >
+              <div
+                style={{
+                  background: "#ffffff",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: "12px",
+                  padding: "20px",
+                }}
+              >
+                <h3 style={{ marginBottom: "18px" }}>Real vs Fake</h3>
+
+                <div
+                  style={{
+                    height: "18px",
+                    display: "flex",
+                    borderRadius: "999px",
+                    overflow: "hidden",
+                    background: "#e2e8f0",
+                  }}
+                >
+                  {analytics.real > 0 && (
+                    <div
+                      style={{
+                        width: `${realPercentage}%`,
+                        background: "#16a34a",
+                      }}
+                      title={`Real: ${analytics.real}`}
+                    />
+                  )}
+                  {analytics.fake > 0 && (
+                    <div
+                      style={{
+                        width: `${fakePercentage}%`,
+                        background: "#dc2626",
+                      }}
+                      title={`Fake: ${analytics.fake}`}
+                    />
+                  )}
+                </div>
+
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    gap: "12px",
+                    marginTop: "15px",
+                    fontSize: "14px",
+                  }}
+                >
+                  <span>
+                    <strong style={{ color: "#16a34a" }}>●</strong> Real:{" "}
+                    {analytics.real} ({realPercentage.toFixed(1)}%)
+                  </span>
+                  <span>
+                    <strong style={{ color: "#dc2626" }}>●</strong> Fake:{" "}
+                    {analytics.fake} ({fakePercentage.toFixed(1)}%)
+                  </span>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  background: "#ffffff",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: "12px",
+                  padding: "20px",
+                }}
+              >
+                <h3 style={{ marginBottom: "18px" }}>Analysis Type</h3>
+
+                <div
+                  style={{
+                    height: "18px",
+                    display: "flex",
+                    borderRadius: "999px",
+                    overflow: "hidden",
+                    background: "#e2e8f0",
+                  }}
+                >
+                  {analytics.images > 0 && (
+                    <div
+                      style={{
+                        width: `${imagePercentage}%`,
+                        background: "#4f46e5",
+                      }}
+                      title={`Images: ${analytics.images}`}
+                    />
+                  )}
+                  {analytics.videos > 0 && (
+                    <div
+                      style={{
+                        width: `${videoPercentage}%`,
+                        background: "#7c3aed",
+                      }}
+                      title={`Videos: ${analytics.videos}`}
+                    />
+                  )}
+                </div>
+
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    gap: "12px",
+                    marginTop: "15px",
+                    fontSize: "14px",
+                  }}
+                >
+                  <span>
+                    <strong style={{ color: "#4f46e5" }}>●</strong> Images:{" "}
+                    {analytics.images} ({imagePercentage.toFixed(1)}%)
+                  </span>
+                  <span>
+                    <strong style={{ color: "#7c3aed" }}>●</strong> Videos:{" "}
+                    {analytics.videos} ({videoPercentage.toFixed(1)}%)
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Recent Activity */}
+            <div
+              style={{
+                background: "#ffffff",
+                border: "1px solid #e2e8f0",
+                borderRadius: "12px",
+                padding: "20px",
+                marginTop: "14px",
+              }}
+            >
+              <h3 style={{ marginBottom: "15px" }}>Recent Analysis Activity</h3>
+
+              {analysisHistory.slice(0, 5).map((item) => (
+                <div
+                  key={item.id}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: "12px",
+                    padding: "12px 0",
+                    borderBottom: "1px solid #f1f5f9",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "10px",
+                      minWidth: 0,
+                    }}
+                  >
+                    <span style={{ fontSize: "20px" }}>
+                      {item.type === "Image" ? "🖼️" : "🎥"}
+                    </span>
+                    <div style={{ minWidth: 0 }}>
+                      <strong
+                        style={{
+                          display: "block",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {item.fileName}
+                      </strong>
+                      <small style={{ color: "#64748b" }}>
+                        {item.timestamp}
+                      </small>
+                    </div>
+                  </div>
+
+                  <span
+                    style={{
+                      flexShrink: 0,
+                      fontWeight: "700",
+                      fontSize: "13px",
+                      color:
+                        item.prediction?.toLowerCase() === "fake"
+                          ? "#dc2626"
+                          : "#16a34a",
+                    }}
+                  >
+                    {item.prediction || "Analyzed"}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* =========================
             ANALYSIS HISTORY
