@@ -28,6 +28,8 @@ function App() {
     }
   });
 
+  const [selectedHistoryItem, setSelectedHistoryItem] = useState(null);
+
   const handleFileChange = (event) => {
     const file = event.target.files[0];
 
@@ -1237,10 +1239,150 @@ function App() {
                   >
                     {item.prediction || "Analyzed"}
                   </div>
+
+                  <button
+                    className="reset-button"
+                    style={{
+                      marginTop: "0",
+                      padding: "10px 16px",
+                      fontSize: "14px",
+                    }}
+                    onClick={() => setSelectedHistoryItem(item)}
+                  >
+                    View Details
+                  </button>
                 </div>
               ))}
             </div>
           </section>
+        )}
+
+        {/* =========================
+            HISTORY DETAILS
+        ========================= */}
+
+        {selectedHistoryItem && (
+          <div
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(15, 23, 42, 0.55)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "20px",
+              zIndex: 1000,
+            }}
+            onClick={() => setSelectedHistoryItem(null)}
+          >
+            <div
+              style={{
+                width: "100%",
+                maxWidth: "650px",
+                maxHeight: "90vh",
+                overflowY: "auto",
+                background: "#ffffff",
+                borderRadius: "14px",
+                padding: "28px",
+                boxShadow: "0 20px 60px rgba(15, 23, 42, 0.25)",
+              }}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  gap: "15px",
+                  marginBottom: "24px",
+                }}
+              >
+                <div>
+                  <span
+                    style={{
+                      fontSize: "12px",
+                      fontWeight: "700",
+                      color: "#64748b",
+                      letterSpacing: "1px",
+                    }}
+                  >
+                    ANALYSIS DETAILS
+                  </span>
+                  <h2 style={{ margin: "6px 0 0" }}>
+                    {selectedHistoryItem.fileName}
+                  </h2>
+                </div>
+
+                <button
+                  className="clear-history-btn"
+                  onClick={() => setSelectedHistoryItem(null)}
+                >
+                  Close
+                </button>
+              </div>
+
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                  gap: "14px",
+                }}
+              >
+                <div className="history-detail">
+                  <span>Analysis Type</span>
+                  <strong>{selectedHistoryItem.type}</strong>
+                </div>
+
+                <div className="history-detail">
+                  <span>Prediction</span>
+                  <strong>{selectedHistoryItem.prediction || "N/A"}</strong>
+                </div>
+
+                <div className="history-detail">
+                  <span>Real Probability</span>
+                  <strong>
+                    {selectedHistoryItem.real_probability ?? "N/A"}%
+                  </strong>
+                </div>
+
+                <div className="history-detail">
+                  <span>Fake Probability</span>
+                  <strong>
+                    {selectedHistoryItem.fake_probability ?? "N/A"}%
+                  </strong>
+                </div>
+
+                <div className="history-detail">
+                  <span>AI-generated Probability</span>
+                  <strong>
+                    {selectedHistoryItem.fake_probability ?? "N/A"}%
+                  </strong>
+                </div>
+
+                {selectedHistoryItem.type === "Video" && (
+                  <div className="history-detail">
+                    <span>Forensic Score</span>
+                    <strong>
+                      {selectedHistoryItem.forensic_score ?? "N/A"}
+                    </strong>
+                  </div>
+                )}
+
+                <div className="history-detail">
+                  <span>Analyzed On</span>
+                  <strong>{selectedHistoryItem.timestamp}</strong>
+                </div>
+              </div>
+
+              <p
+                className="disclaimer"
+                style={{ marginTop: "22px", marginBottom: 0 }}
+              >
+                This information is the summary saved when this analysis was
+                completed. Running a new analysis creates a new history entry.
+              </p>
+            </div>
+          </div>
         )}
 
       </main>
