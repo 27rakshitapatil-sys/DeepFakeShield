@@ -29,6 +29,24 @@ function App() {
   });
 
   const [selectedHistoryItem, setSelectedHistoryItem] = useState(null);
+  const [historySearch, setHistorySearch] = useState("");
+  const [historyTypeFilter, setHistoryTypeFilter] = useState("All");
+  const [historyPredictionFilter, setHistoryPredictionFilter] = useState("All");
+
+  const filteredHistory = analysisHistory.filter((item) => {
+    const matchesSearch = item.fileName
+      ?.toLowerCase()
+      .includes(historySearch.toLowerCase());
+
+    const matchesType =
+      historyTypeFilter === "All" || item.type === historyTypeFilter;
+
+    const matchesPrediction =
+      historyPredictionFilter === "All" ||
+      item.prediction?.toLowerCase() === historyPredictionFilter.toLowerCase();
+
+    return matchesSearch && matchesType && matchesPrediction;
+  });
 
   const handleFileChange = (event) => {
     const file = event.target.files[0];
@@ -1211,8 +1229,72 @@ function App() {
               </button>
             </div>
 
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+                gap: "12px",
+                marginBottom: "20px",
+              }}
+            >
+              <input
+                type="text"
+                value={historySearch}
+                onChange={(event) => setHistorySearch(event.target.value)}
+                placeholder="Search by file name..."
+                style={{
+                  width: "100%",
+                  padding: "12px 14px",
+                  border: "1px solid #cbd5e1",
+                  borderRadius: "10px",
+                  fontSize: "14px",
+                  outline: "none",
+                  background: "#ffffff",
+                }}
+              />
+
+              <select
+                value={historyTypeFilter}
+                onChange={(event) => setHistoryTypeFilter(event.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "12px 14px",
+                  border: "1px solid #cbd5e1",
+                  borderRadius: "10px",
+                  fontSize: "14px",
+                  background: "#ffffff",
+                  cursor: "pointer",
+                }}
+              >
+                <option value="All">All Types</option>
+                <option value="Image">Images</option>
+                <option value="Video">Videos</option>
+              </select>
+
+              <select
+                value={historyPredictionFilter}
+                onChange={(event) =>
+                  setHistoryPredictionFilter(event.target.value)
+                }
+                style={{
+                  width: "100%",
+                  padding: "12px 14px",
+                  border: "1px solid #cbd5e1",
+                  borderRadius: "10px",
+                  fontSize: "14px",
+                  background: "#ffffff",
+                  cursor: "pointer",
+                }}
+              >
+                <option value="All">All Results</option>
+                <option value="Real">Real</option>
+                <option value="Fake">Fake</option>
+              </select>
+            </div>
+
             <div className="history-list">
-              {analysisHistory.map((item) => (
+              {filteredHistory.length > 0 ? (
+                filteredHistory.map((item) => (
                 <div className="history-card" key={item.id}>
                   <div className="history-icon">
                     {item.type === "Image" ? "🖼️" : "🎥"}
@@ -1252,7 +1334,21 @@ function App() {
                     View Details
                   </button>
                 </div>
-              ))}
+                ))
+              ) : (
+                <div
+                  style={{
+                    textAlign: "center",
+                    padding: "30px 20px",
+                    color: "#64748b",
+                    background: "#ffffff",
+                    borderRadius: "12px",
+                    border: "1px solid #e2e8f0",
+                  }}
+                >
+                  No analyses match your search or filters.
+                </div>
+              )}
             </div>
           </section>
         )}
