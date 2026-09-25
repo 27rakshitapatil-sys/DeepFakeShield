@@ -1,5 +1,6 @@
 import { useState } from "react";
 import axios from "axios";
+import { jsPDF } from "jspdf";
 import "./App.css";
 
 function App() {
@@ -27,10 +28,6 @@ function App() {
     }
   });
 
-  // =========================
-  // IMAGE FILE CHANGE
-  // =========================
-
   const handleFileChange = (event) => {
     const file = event.target.files[0];
 
@@ -43,10 +40,6 @@ function App() {
     const imageUrl = URL.createObjectURL(file);
     setPreview(imageUrl);
   };
-
-  // =========================
-  // IMAGE ANALYSIS
-  // =========================
 
   const handleAnalyze = async () => {
     if (!selectedFile) {
@@ -89,10 +82,6 @@ function App() {
     }
   };
 
-  // =========================
-  // VIDEO FILE CHANGE
-  // =========================
-
   const handleVideoChange = (event) => {
     const file = event.target.files[0];
 
@@ -102,10 +91,6 @@ function App() {
     setVideoResult(null);
     setVideoError("");
   };
-
-  // =========================
-  // VIDEO ANALYSIS
-  // =========================
 
   const handleAnalyzeVideo = async () => {
     if (!selectedVideo) {
@@ -148,10 +133,6 @@ function App() {
     }
   };
 
-  // =========================
-  // RESET IMAGE ANALYSIS
-  // =========================
-
   const resetImageAnalysis = () => {
     setSelectedFile(null);
     setPreview(null);
@@ -159,19 +140,11 @@ function App() {
     setError("");
   };
 
-  // =========================
-  // RESET VIDEO ANALYSIS
-  // =========================
-
   const resetVideoAnalysis = () => {
     setSelectedVideo(null);
     setVideoResult(null);
     setVideoError("");
   };
-
-  // =========================
-  // PROBABILITY LEVEL
-  // =========================
 
   const getProbabilityLevel = (fakeProbability) => {
     if (fakeProbability < 20) {
@@ -217,21 +190,268 @@ function App() {
   };
 
   // =========================
-  // CLEAR HISTORY
+  // FORENSIC REPORT - DIRECT PDF DOWNLOAD
   // =========================
 
-  const clearHistory = () => {
-    localStorage.removeItem("deepfakeShieldHistory");
-    setAnalysisHistory([]);
+  const generateForensicReport = (type, fileName, analysisResult) => {
+    if (!analysisResult) return;
+
+    const doc = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
+    });
+
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 16;
+    const contentWidth = pageWidth - margin * 2;
+    let y = 18;
+
+    const fakeProbability = Number(analysisResult.fake_probability ?? 0);
+    const realProbability = Number(analysisResult.real_probability ?? 0);
+    const aiProbability = Number(
+      analysisResult.ai_generated_probability ??
+      analysisResult.fake_probability ??
+      0
+    );
+    const probabilityLevel = getProbabilityLevel(fakeProbability);
+    const reportDate = new Date().toLocaleString();
+    const isVideo = type === "Video";
+
+    const temporalConsistency = isVideo
+      ? Number(analysisResult.temporal_consistency ?? 0) * 100
+      : null;
+    const forensicScore = isVideo
+      ? Number(analysisResult.forensic_score ?? 0)
+      : null;
+    const suspiciousFrames = isVideo
+      ? Number(analysisResult.suspicious_frames ?? 0)
+      : null;
+    const totalFrames = isVideo
+      ? Number(analysisResult.frames_analyzed ?? 0)
+      : null;
+    const suspiciousPercentage = isVideo
+      ? Number(analysisResult.suspicious_percentage ?? 0)
+      : null;
+    const duration = isVideo
+      ? analysisResult.video_duration ?? "N/A"
+      : null;
+    const forensicAssessment = isVideo
+      ? analysisResult.forensic_assessment ?? "N/A"
+      : null;
+
+    const addPageIfNeeded = (neededHeight = 12) => {
+      if (y + neededHeight > pageHeight - 18) {
+        doc.addPage();
+        y = 18;
+      }
+    };
+
+    const addSectionTitle = (title) => {
+      addPageIfNeeded(18);
+      doc.setFillColor(49, 46, 129);
+      doc.rect(margin, y, contentWidth, 0.8, "F");
+      y += 7;
+      doc.setTextColor(49, 46, 129);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(13);
+      doc.text(title, margin, y);
+      y += 8;
+      doc.setTextColor(30, 41, 59);
+    };
+
+    const addField = (label, value) => {
+      const textValue = String(value ?? "N/A");
+      const wrapped = doc.splitTextToSize(textValue, contentWidth - 6);
+      const boxHeight = Math.max(15, 9 + wrapped.length * 5);
+
+      addPageIfNeeded(boxHeight + 4);
+
+      doc.setFillColor(248, 250, 252);
+      doc.setDrawColor(226, 232, 240);
+      doc.roundedRect(margin, y, contentWidth, boxHeight, 2.5, 2.5, "FD");
+
+      doc.setTextColor(100, 116, 139);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.text(label, margin + 5, y + 6);
+
+      doc.setTextColor(15, 23, 42);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.text(wrapped, margin + 5, y + 12);
+
+      y += boxHeight + 4;
+    };
+
+    const addParagraph = (text) => {
+      const wrapped = doc.splitTextToSize(text, contentWidth);
+      const height = wrapped.length * 5 + 3;
+      addPageIfNeeded(height);
+      doc.setTextColor(51, 65, 85);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.text(wrapped, margin, y);
+      y += height;
+    };
+
+    // Header
+    doc.setFillColor(49, 46, 129);
+    doc.rect(0, 0, pageWidth, 34, "F");
+
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(23);
+    doc.text("DeepFakeShield", margin, 15);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.text("AI-Powered Digital Authenticity Analysis", margin, 23);
+
+    y = 45;
+
+    doc.setTextColor(15, 23, 42);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    doc.text("Forensic Analysis Report", margin, y);
+    y += 7;
+
+    doc.setTextColor(100, 116, 139);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.text(`Generated: ${reportDate}`, margin, y);
+    y += 12;
+
+    // Main result box
+    const prediction = String(analysisResult.prediction ?? "Unknown");
+    doc.setFillColor(238, 242, 255);
+    doc.setDrawColor(199, 210, 254);
+    doc.roundedRect(margin, y, contentWidth, 29, 3, 3, "FD");
+
+    doc.setTextColor(49, 46, 129);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(17);
+    doc.text(prediction, pageWidth / 2, y + 11, { align: "center" });
+
+    doc.setTextColor(51, 65, 85);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.text(
+      `AI-generated probability: ${aiProbability.toFixed(2)}%`,
+      pageWidth / 2,
+      y + 18,
+      { align: "center" }
+    );
+    doc.setFont("helvetica", "bold");
+    doc.text(
+      `Probability level: ${probabilityLevel}`,
+      pageWidth / 2,
+      y + 24,
+      { align: "center" }
+    );
+
+    y += 39;
+
+    addSectionTitle("File Information");
+    addField("File Name", fileName);
+    addField("Analysis Type", type);
+    addField("Analysis Date", reportDate);
+
+    addSectionTitle("Probability Analysis");
+    addField("Real Probability", `${realProbability.toFixed(2)}%`);
+    addField("Fake Probability", `${fakeProbability.toFixed(2)}%`);
+    addField("AI-generated Probability", `${aiProbability.toFixed(2)}%`);
+    addField("Probability Level", probabilityLevel);
+
+    if (isVideo) {
+      addSectionTitle("Video Forensic Analysis");
+      addField("Video Duration", `${duration}s`);
+      addField("Frames Analyzed", totalFrames);
+      addField("Suspicious Frames", suspiciousFrames);
+      addField("Suspicious Portion", `${suspiciousPercentage.toFixed(2)}%`);
+      addField("Temporal Consistency", `${temporalConsistency.toFixed(2)}%`);
+      addField("Forensic Score", `${forensicScore.toFixed(2)}%`);
+      addField("Forensic Assessment", forensicAssessment);
+
+      if (
+        Array.isArray(analysisResult.suspicious_segments) &&
+        analysisResult.suspicious_segments.length > 0
+      ) {
+        addSectionTitle("Suspicious Segments");
+
+        analysisResult.suspicious_segments.forEach((segment, index) => {
+          addField(
+            `Suspicious Segment ${index + 1}`,
+            `${segment.start ?? "N/A"} → ${segment.end ?? "N/A"} | Duration: ${segment.duration ?? "N/A"}s`
+          );
+        });
+      }
+
+      if (
+        Array.isArray(analysisResult.frame_analysis) &&
+        analysisResult.frame_analysis.length > 0
+      ) {
+        addSectionTitle("Frame-by-Frame Analysis");
+
+        analysisResult.frame_analysis.forEach((frame) => {
+          addField(
+            `Frame ${frame.frame_number ?? "N/A"}`,
+            `Prediction: ${frame.prediction ?? "N/A"} | Timestamp: ${frame.timestamp ?? "N/A"} | Real: ${frame.real_probability ?? "N/A"}% | Fake: ${frame.fake_probability ?? "N/A"}% | Confidence: ${frame.confidence ?? "N/A"}%`
+          );
+        });
+      }
+    }
+
+    addSectionTitle("Analysis Summary");
+    addParagraph(
+      `DeepFakeShield analyzed the submitted ${type.toLowerCase()} using its configured AI-based authenticity detection pipeline.`
+    );
+    addParagraph(
+      `The detected prediction was ${prediction} with a fake probability of ${fakeProbability.toFixed(2)}%.`
+    );
+
+    if (isVideo) {
+      addParagraph(
+        `The video forensic analysis examined ${totalFrames} frames and identified ${suspiciousFrames} suspicious frames, representing ${suspiciousPercentage.toFixed(2)}% of the analyzed frames.`
+      );
+    }
+
+    addParagraph(
+      "This report presents automated analysis results and should be interpreted together with the underlying evidence and analysis context."
+    );
+
+    // Footer on every page
+    const pageCount = doc.getNumberOfPages();
+    for (let page = 1; page <= pageCount; page += 1) {
+      doc.setPage(page);
+      doc.setDrawColor(226, 232, 240);
+      doc.line(margin, pageHeight - 13, pageWidth - margin, pageHeight - 13);
+      doc.setTextColor(100, 116, 139);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.text(
+        "DeepFakeShield Forensic Analysis System",
+        margin,
+        pageHeight - 8
+      );
+      doc.text(
+        `Page ${page} of ${pageCount}`,
+        pageWidth - margin,
+        pageHeight - 8,
+        { align: "right" }
+      );
+    }
+
+    const safeFileName = String(fileName || "analysis")
+      .replace(/[^a-z0-9._-]+/gi, "_")
+      .replace(/^_+|_+$/g, "");
+
+    doc.save(`DeepFakeShield_Forensic_Report_${safeFileName || "analysis"}.pdf`);
   };
 
   return (
     <div className="app">
-
-      {/* =========================
-          HEADER
-      ========================= */}
-
       <header className="header">
         <h1>Deepfake Shield</h1>
 
@@ -247,7 +467,6 @@ function App() {
         ========================= */}
 
         <div className="upload-card">
-
           <h2>Analyze an Image</h2>
 
           <p className="description">
@@ -256,7 +475,6 @@ function App() {
           </p>
 
           <label className="upload-box">
-
             <input
               type="file"
               accept="image/*"
@@ -276,12 +494,10 @@ function App() {
             <span className="upload-text">
               JPG, JPEG or PNG
             </span>
-
           </label>
 
           {preview && (
             <div className="preview-section">
-
               <h3>
                 Selected Image
               </h3>
@@ -291,7 +507,6 @@ function App() {
                 alt="Preview"
                 className="preview-image"
               />
-
             </div>
           )}
 
@@ -397,6 +612,19 @@ function App() {
               </p>
 
               <button
+                className="analyze-button"
+                onClick={() =>
+                  generateForensicReport(
+                    "Image",
+                    selectedFile?.name || "Image",
+                    result
+                  )
+                }
+              >
+                Download Forensic Report
+              </button>
+
+              <button
                 className="reset-button"
                 onClick={resetImageAnalysis}
               >
@@ -405,7 +633,6 @@ function App() {
 
             </div>
           )}
-
         </div>
 
         {/* =========================
@@ -644,7 +871,6 @@ function App() {
                 <div className="forensic-metric">
 
                   <div className="forensic-metric-header">
-
                     <span>
                       AI Fake Probability
                     </span>
@@ -652,7 +878,6 @@ function App() {
                     <strong>
                       {videoResult.fake_probability}%
                     </strong>
-
                   </div>
 
                   <div className="forensic-metric-bar">
@@ -671,7 +896,6 @@ function App() {
                 <div className="forensic-metric">
 
                   <div className="forensic-metric-header">
-
                     <span>
                       Temporal Consistency
                     </span>
@@ -681,7 +905,6 @@ function App() {
                         ? `${(videoResult.temporal_consistency * 100).toFixed(2)}%`
                         : "N/A"}
                     </strong>
-
                   </div>
 
                   <div className="forensic-metric-bar">
@@ -704,7 +927,6 @@ function App() {
                 <div className="forensic-metric">
 
                   <div className="forensic-metric-header">
-
                     <span>
                       Suspicious Portion
                     </span>
@@ -712,7 +934,6 @@ function App() {
                     <strong>
                       {videoResult.suspicious_percentage}%
                     </strong>
-
                   </div>
 
                   <div className="forensic-metric-bar">
@@ -731,7 +952,6 @@ function App() {
                 <div className="forensic-metric">
 
                   <div className="forensic-metric-header">
-
                     <span>
                       Forensic Score
                     </span>
@@ -741,7 +961,6 @@ function App() {
                         ? `${videoResult.forensic_score}%`
                         : "N/A"}
                     </strong>
-
                   </div>
 
                   <div className="forensic-metric-bar">
@@ -942,6 +1161,19 @@ function App() {
               </p>
 
               <button
+                className="analyze-button"
+                onClick={() =>
+                  generateForensicReport(
+                    "Video",
+                    selectedVideo?.name || "Video",
+                    videoResult
+                  )
+                }
+              >
+                Download Forensic Report
+              </button>
+
+              <button
                 className="reset-button"
                 onClick={resetVideoAnalysis}
               >
@@ -953,55 +1185,39 @@ function App() {
 
         </div>
 
+
         {/* =========================
             ANALYSIS HISTORY
         ========================= */}
 
         {analysisHistory.length > 0 && (
-
           <section className="history-section">
-
             <div className="section-heading">
-
               <div>
-
                 <span>ANALYSIS HISTORY</span>
-
-                <h2>
-                  Previous Analyses
-                </h2>
-
+                <h2>Previous Analyses</h2>
               </div>
 
               <button
                 className="clear-history-btn"
-                onClick={clearHistory}
+                onClick={() => {
+                  localStorage.removeItem("deepfakeShieldHistory");
+                  setAnalysisHistory([]);
+                }}
               >
                 Clear History
               </button>
-
             </div>
 
             <div className="history-list">
-
               {analysisHistory.map((item) => (
-
-                <div
-                  className="history-card"
-                  key={item.id}
-                >
-
+                <div className="history-card" key={item.id}>
                   <div className="history-icon">
-                    {item.type === "Image"
-                      ? "🖼️"
-                      : "🎥"}
+                    {item.type === "Image" ? "🖼️" : "🎥"}
                   </div>
 
                   <div className="history-info">
-
-                    <strong>
-                      {item.fileName}
-                    </strong>
+                    <strong>{item.fileName}</strong>
 
                     <span>
                       {item.type === "Image"
@@ -1009,80 +1225,25 @@ function App() {
                         : "Video Analysis"}
                     </span>
 
-                    <small>
-                      {item.timestamp}
-                    </small>
-
+                    <small>{item.timestamp}</small>
                   </div>
 
-                  <div className="history-details">
-
-                    <div className="history-detail">
-
-                      <span>
-                        Result
-                      </span>
-
-                      <strong
-                        className={
-                          item.prediction?.toLowerCase() === "fake"
-                            ? "history-fake"
-                            : "history-real"
-                        }
-                      >
-                        {item.prediction || "Analyzed"}
-                      </strong>
-
-                    </div>
-
-                    <div className="history-detail">
-
-                      <span>
-                        AI Probability
-                      </span>
-
-                      <strong>
-                        {item.fake_probability !== undefined &&
-                        item.fake_probability !== null
-                          ? `${item.fake_probability}%`
-                          : "N/A"}
-                      </strong>
-
-                    </div>
-
-                    {item.type === "Video" && (
-
-                      <div className="history-detail">
-
-                        <span>
-                          Forensic Score
-                        </span>
-
-                        <strong>
-                          {item.forensic_score !== undefined &&
-                          item.forensic_score !== null
-                            ? `${item.forensic_score}%`
-                            : "N/A"}
-                        </strong>
-
-                      </div>
-
-                    )}
-
+                  <div
+                    className={`history-result ${
+                      item.prediction?.toLowerCase() === "fake"
+                        ? "history-fake"
+                        : "history-real"
+                    }`}
+                  >
+                    {item.prediction || "Analyzed"}
                   </div>
-
                 </div>
-
               ))}
-
             </div>
-
           </section>
-
         )}
 
       </main>
-
     </div>
   );
 }
