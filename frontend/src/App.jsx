@@ -1,9 +1,63 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import { jsPDF } from "jspdf";
 import "./App.css";
+import Auth from "./Auth";
+import Home from "./Home";
+import About from "./About";
 
 function App() {
+  const [publicPage, setPublicPage] = useState("home");
+
+  // =========================
+  // USER AUTHENTICATION
+  // =========================
+
+  const [currentUser, setCurrentUser] = useState(null);
+  const [authChecking, setAuthChecking] = useState(true);
+
+  useEffect(() => {
+    const checkAuthentication = async () => {
+      try {
+        const response = await axios.get(
+          "http://127.0.0.1:8000/api/auth/me/",
+          { withCredentials: true }
+        );
+
+        if (response.data.authenticated) {
+          setCurrentUser(response.data.user);
+        } else {
+          setCurrentUser(null);
+        }
+      } catch (error) {
+        setCurrentUser(null);
+      } finally {
+        setAuthChecking(false);
+      }
+    };
+
+    checkAuthentication();
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await axios.post(
+        "http://127.0.0.1:8000/api/auth/logout/",
+        {},
+        { withCredentials: true }
+      );
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+
+    setAnalysisHistory([]);
+    setSelectedHistoryItem(null);
+    setHistorySearch("");
+    setHistoryTypeFilter("All");
+    setHistoryPredictionFilter("All");
+
+    setCurrentUser(null);
+  };
   const [selectedFile, setSelectedFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [result, setResult] = useState(null);
@@ -11,7 +65,16 @@ function App() {
   const [error, setError] = useState("");
 
   const [selectedVideo, setSelectedVideo] = useState(null);
+  const [videoPreview, setVideoPreview] = useState(null);
   const [videoResult, setVideoResult] = useState(null);
+
+  useEffect(() => {
+    return () => {
+      if (videoPreview) {
+        URL.revokeObjectURL(videoPreview);
+      }
+    };
+  }, [videoPreview]);
   const [videoLoading, setVideoLoading] = useState(false);
   const [videoError, setVideoError] = useState("");
 
@@ -19,19 +82,33 @@ function App() {
   // ANALYSIS HISTORY
   // =========================
 
-  const [analysisHistory, setAnalysisHistory] = useState(() => {
-    try {
-      const savedHistory = localStorage.getItem("deepfakeShieldHistory");
-      return savedHistory ? JSON.parse(savedHistory) : [];
-    } catch (error) {
-      return [];
-    }
-  });
+  const [analysisHistory, setAnalysisHistory] = useState([]);
 
   const [selectedHistoryItem, setSelectedHistoryItem] = useState(null);
   const [historySearch, setHistorySearch] = useState("");
   const [historyTypeFilter, setHistoryTypeFilter] = useState("All");
   const [historyPredictionFilter, setHistoryPredictionFilter] = useState("All");
+
+  // =========================
+  // LOAD HISTORY FOR CURRENT USER
+  // =========================
+
+  useEffect(() => {
+    if (!currentUser?.username) {
+      setAnalysisHistory([]);
+      return;
+    }
+
+    try {
+      const historyKey = `deepfakeShieldHistory_${currentUser.username}`;
+      const savedHistory = localStorage.getItem(historyKey);
+
+      setAnalysisHistory(savedHistory ? JSON.parse(savedHistory) : []);
+    } catch (error) {
+      console.error("Unable to load user history:", error);
+      setAnalysisHistory([]);
+    }
+  }, [currentUser]);
 
   const filteredHistory = analysisHistory.filter((item) => {
     const matchesSearch = item.fileName
@@ -157,6 +234,7 @@ function App() {
     if (!file) return;
 
     setSelectedVideo(file);
+    setVideoPreview(URL.createObjectURL(file));
     setVideoResult(null);
     setVideoError("");
   };
@@ -211,6 +289,7 @@ function App() {
 
   const resetVideoAnalysis = () => {
     setSelectedVideo(null);
+    setVideoPreview(null);
     setVideoResult(null);
     setVideoError("");
   };
@@ -246,11 +325,17 @@ function App() {
       timestamp: new Date().toLocaleString(),
     };
 
+    if (!currentUser?.username) {
+      return;
+    }
+
+    const historyKey = `deepfakeShieldHistory_${currentUser.username}`;
+
     setAnalysisHistory((previousHistory) => {
       const updatedHistory = [historyItem, ...previousHistory];
 
       localStorage.setItem(
-        "deepfakeShieldHistory",
+        historyKey,
         JSON.stringify(updatedHistory)
       );
 
@@ -519,14 +604,77 @@ function App() {
     doc.save(`DeepFakeShield_Forensic_Report_${safeFileName || "analysis"}.pdf`);
   };
 
+  if (authChecking) {
+    return (
+      <div className="auth-page">
+        <div className="auth-card">
+          <div className="auth-brand">
+            <div className="auth-logo">DS</div>
+            <h1>DeepFakeShield</h1>
+            <p>Checking your account...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    if (publicPage === "home") {
+      return (
+        <Home
+          onLogin={() => setPublicPage("login")}
+          onRegister={() => setPublicPage("register")}
+          onAbout={() => setPublicPage("about")}
+        />
+      );
+    }
+
+    if (publicPage === "about") {
+      return (
+        <About
+          onHome={() => setPublicPage("home")}
+          onLogin={() => setPublicPage("login")}
+          onRegister={() => setPublicPage("register")}
+        />
+      );
+    }
+
+    return (
+      <Auth
+        initialMode={publicPage === "register" ? "register" : "login"}
+        onLogin={(user) => {
+          setCurrentUser(user);
+          setPublicPage("home");
+        }}
+        onBackToHome={() => setPublicPage("home")}
+      />
+    );
+  }
+
   return (
     <div className="app">
       <header className="header">
-        <h1>Deepfake Shield</h1>
+        <div className="header-title">
+          <h1>Deepfake Shield</h1>
 
-        <p>
-          AI-powered image and video authenticity analysis
-        </p>
+          <p>
+            AI-powered image and video authenticity analysis
+          </p>
+        </div>
+
+        <div className="user-header">
+          <span>
+            <strong>{currentUser?.username}</strong>
+          </span>
+
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="logout-button"
+          >
+            Logout
+          </button>
+        </div>
       </header>
 
       <main className="container">
@@ -744,6 +892,32 @@ function App() {
             </span>
 
           </label>
+
+          {videoPreview && (
+            <div
+              style={{
+                marginTop: "18px",
+                width: "100%",
+                borderRadius: "12px",
+                overflow: "hidden",
+                background: "#020617",
+                border: "1px solid rgba(148, 163, 184, 0.18)",
+              }}
+            >
+              <video
+                src={videoPreview}
+                controls
+                preload="metadata"
+                style={{
+                  width: "100%",
+                  maxHeight: "420px",
+                  display: "block",
+                  objectFit: "contain",
+                  background: "#020617",
+                }}
+              />
+            </div>
+          )}
 
           <button
             className="analyze-button"
@@ -1622,7 +1796,13 @@ function App() {
               <button
                 className="clear-history-btn"
                 onClick={() => {
-                  localStorage.removeItem("deepfakeShieldHistory");
+                  if (!currentUser?.username) {
+                    return;
+                  }
+
+                  const historyKey = `deepfakeShieldHistory_${currentUser.username}`;
+
+                  localStorage.removeItem(historyKey);
                   setAnalysisHistory([]);
                 }}
               >
