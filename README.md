@@ -399,11 +399,4 @@ The application is currently developed and tested locally with image detection, 
 
 📜 License
 
-This project is intended for educational and portfolio purposes.
-
-
-### One important thing
-
-I intentionally **didn't put a "Live Demo" link** in this README because the current Render deployment is returning 502/Internal Server Error and the Vercel deployment exceeded its function-size limit.
-
-Your GitHub repository can still show the project professionally with the **Project Status** section above.
+This project is intended for educational and portfolio purposes 
